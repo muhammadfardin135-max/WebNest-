@@ -15,13 +15,17 @@ justifies reopening it. Say so.
 One file per decision, named for the thing decided. Four headings, short:
 
 ```markdown
-# Charging monthly, not one-off
+# [The thing decided, as a short statement]
 
-**Decided:** 2026-03-14
+**Decided:** [YYYY-MM-DD]
 **The call:** [one sentence]
 **Why:** [the reasoning at the time]
 **What would change my mind:** [the condition that reopens this]
 ```
+
+Nothing above is a real decision — it is the empty shape. This folder is empty
+until I put something in it, and an invented example sitting in here would read
+as a record of mine six weeks later. Don't add one.
 
 That last heading is the one that matters. A decision with no stated reversal
 condition can't be revisited honestly — it either stands forever out of habit or

@@ -139,6 +139,11 @@ Never fabricate: no invented statistics, case studies, competitor numbers, custo
 quotes, or results. Use `[INSERT: specific detail]` and tell me what to supply.
 An invented market size is worse than no market size — I might act on it.
 
+**This covers examples in templates and scaffolding.** A realistic sample decision
+or figure written into a README reads as a record of mine weeks later, when the
+context is gone. Empty brackets, never plausible filler. If a format needs
+demonstrating, label the demonstration as one on the page.
+
 ## This repo
 
 Business notes, not code. Don't assume a layout that isn't on disk — check.
