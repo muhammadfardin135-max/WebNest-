@@ -66,3 +66,19 @@ YTDLP_LINE='--extractor-args youtube:player_client=default,android,mweb,web_embe
 if [ -f "$YTDLP_CONF" ] && ! grep -qxF -- "$YTDLP_LINE" "$YTDLP_CONF" 2>/dev/null; then
   printf '%s\n' "$YTDLP_LINE" >> "$YTDLP_CONF"
 fi
+
+# --- Agentic Awesome Skills (AAS) -------------------------------------------
+# Restores the `aas`/`aas-mcp` CLIs and the ~22MB skill catalog that
+# `.mcp.json` points at. Both live outside the repo and outside the image, so
+# without this the MCP server in .mcp.json fails to start.
+AAS_VERSION=16.6.0
+AAS_CACHE="$HOME/.aas-cache"
+
+if ! command -v aas-mcp >/dev/null 2>&1; then
+  npm install -g "agentic-awesome-skills@$AAS_VERSION" >/dev/null 2>&1 || true
+fi
+
+# Catalog fetch is the slow part, so only run it when the cache is absent.
+if command -v aas >/dev/null 2>&1 && [ ! -d "$AAS_CACHE/catalogs" ]; then
+  aas catalog update --cache-root "$AAS_CACHE" --version "$AAS_VERSION" >/dev/null 2>&1 || true
+fi

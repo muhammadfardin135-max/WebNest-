@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "aas": {
+      "command": "aas-mcp",
+      "args": ["--cache-root", "${HOME}/.aas-cache"],
+      "env": {}
+    }
+  }
+}
