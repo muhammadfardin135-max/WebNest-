@@ -47,6 +47,10 @@ laptop, useless here.
 **The trade:** upstream fixes don't arrive on their own. Refreshing means copying
 the files again. Worth it for anything you rely on.
 
+225 skills from five repos now arrive this way — pm-skills, wondelai, BMAD-METHOD,
+cc-thinking-skills, superpowers. What came from where, what was left out, what BMAD
+needs to run, and what the whole set costs every session: `vendored-skills.md`.
+
 Hand Claude a GitHub link to a skill and it can do the copying.
 
 ## Which route for what

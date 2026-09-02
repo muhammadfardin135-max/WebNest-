@@ -151,6 +151,8 @@ Business notes, not code. Don't assume a layout that isn't on disk — check.
 - `decisions/` — things I've already settled and why. Read before re-arguing a
   choice. If you want to reopen one, say which entry you're challenging.
 - `docs/` — how the tooling here works and what was actually tested.
+- `_bmad/` — config and scripts the vendored `bmad-*` skills call. Not notes.
+  Output goes to `_bmad-output/`. See `docs/vendored-skills.md`.
 
 A browser works here: `playwright-cli`, restored each session by the session-start
 hook. `WebFetch` and `WebSearch` are cheaper for plain reading. See
