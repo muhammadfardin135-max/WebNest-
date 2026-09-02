@@ -1,0 +1,132 @@
+#!/usr/bin/env bash
+# ytfind — screen YouTube for long-form videos worth reading, then read them.
+#
+#   ytfind search [opts] QUERY...   candidate table: date, length, views, channel, title, url
+#   ytfind subs ID...               download auto-subtitles and clean them to plain text
+#   ytfind meta ID...               one metadata line per video id
+#
+# Titles on this material are unreliable. The table is for narrowing only;
+# nothing gets recommended until `subs` has been read.
+
+set -uo pipefail
+
+WORKDIR="${YTFIND_WORKDIR:-${TMPDIR:-/tmp}/ytfind}"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+VTT2TXT="$HERE/vtt2txt.py"
+JOBS="${YTFIND_JOBS:-16}"
+TAB=$'\t'
+FMT="%(id)s${TAB}%(upload_date)s${TAB}%(duration)s${TAB}%(view_count)s${TAB}%(channel)s${TAB}%(title)s"
+
+die() { printf 'ytfind: %s\n' "$*" >&2; exit 1; }
+command -v yt-dlp >/dev/null || die "yt-dlp not on PATH (session-start.sh restores it)"
+
+hms() { local s=$1; printf '%d:%02d:%02d' $((s/3600)) $((s%3600/60)) $((s%60)); }
+
+cmd_search() {
+  local depth=100 min=600 max=10800 since=0 longonly=0
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+      -d|--depth) depth=$2; shift 2 ;;
+      -m|--min)   min=$2;   shift 2 ;;
+      -M|--max)   max=$2;   shift 2 ;;
+      -s|--since) since=$2; shift 2 ;;
+      -L|--long)  longonly=1; shift ;;
+      -h|--help)  sed -n '2,12p' "$0"; exit 0 ;;
+      --) shift; break ;;
+      -*) die "unknown option $1" ;;
+      *)  break ;;
+    esac
+  done
+  [[ $# -gt 0 ]] || die "no query given"
+
+  mkdir -p "$WORKDIR"
+  local ids; ids=$(mktemp "$WORKDIR/ids.XXXXXX")
+
+  # Pass 1 — flat search is cheap (~4s for 100 hits) but carries no dates,
+  # so filter on duration here and pay for metadata only on survivors.
+  local q url
+  for q in "$@"; do
+    printf 'searching: %s\n' "$q" >&2
+    yt-dlp "ytsearch${depth}:${q}" --flat-playlist \
+        --print '%(duration)s|%(id)s' 2>/dev/null \
+      | awk -F'|' -v lo="$min" -v hi="$max" '$1+0>=lo && $1+0<=hi {print $2}' >>"$ids"
+
+    # YouTube's own >20min filter reaches a different slice of the index than
+    # keyword relevance does. Verified 2026-09-01: it surfaced a 34-minute
+    # video that twenty-six keyword searches had all missed.
+    if [[ $longonly -eq 1 ]]; then
+      url="https://www.youtube.com/results?search_query=${q// /+}&sp=EgIYAg%3D%3D"
+      yt-dlp "$url" --flat-playlist --print '%(duration)s|%(id)s' 2>/dev/null \
+        | awk -F'|' -v lo="$min" -v hi="$max" '$1+0>=lo && $1+0<=hi {print $2}' >>"$ids"
+    fi
+  done
+
+  # Keep YouTube's relevance order. Re-sorting the merged pool by date floats
+  # junk to the top: search pads its tail with loosely-related hits, and those
+  # are often the most recent things in the pool.
+  awk '!seen[$0]++' "$ids" > "$ids.o" && mv "$ids.o" "$ids"
+  local n; n=$(wc -l <"$ids")
+  printf 'enriching %s candidates\n' "$n" >&2
+  [[ $n -gt 0 ]] || { printf 'no candidates in range\n' >&2; rm -f "$ids"; return 0; }
+
+  # Dates and view counts need a per-video fetch; parallelism is what keeps
+  # that from dominating the run (63 videos in 55s at -P 16).
+  local meta; meta=$(mktemp "$WORKDIR/meta.XXXXXX")
+  xargs -P "$JOBS" -I{} yt-dlp --skip-download --print "$FMT" \
+      "https://youtu.be/{}" <"$ids" 2>/dev/null >"$meta"
+
+  local rank=0
+  while read -r want; do
+    while IFS=$'\t' read -r id date dur views channel title; do
+      [[ "$id" == "$want" ]] || continue
+      [[ "$date" != "NA" && "${date:-0}" -ge "$since" ]] || continue
+      rank=$((rank+1))
+      printf '%3d. %8s  %-8s  %10s  %s\n     %s\n     https://youtu.be/%s\n' \
+        "$rank" "$(hms "$dur")" "$date" "$views" "$channel" "$title" "$id"
+    done <"$meta"
+  done <"$ids"
+  rm -f "$ids" "$meta"
+  rm -f "$ids"
+}
+
+cmd_subs() {
+  [[ $# -gt 0 ]] || die "no video id given"
+  mkdir -p "$WORKDIR/subs"
+  local id
+  for id in "$@"; do
+    id="${id##*/}"; id="${id#watch?v=}"
+    ( yt-dlp --skip-download --write-auto-sub --sub-lang en --sub-format vtt \
+        -o "$WORKDIR/subs/$id.%(ext)s" "https://youtu.be/$id" >/dev/null 2>&1 ) &
+  done
+  wait
+  for id in "$@"; do
+    id="${id##*/}"; id="${id#watch?v=}"
+    if [[ -f "$WORKDIR/subs/$id.en.vtt" ]]; then
+      python3 "$VTT2TXT" "$WORKDIR/subs/$id.en.vtt" >"$WORKDIR/subs/$id.txt"
+      printf '%s\t%s words\t%s\n' "$id" "$(wc -w <"$WORKDIR/subs/$id.txt")" \
+        "$WORKDIR/subs/$id.txt"
+    else
+      # No English track at all, or none auto-translated. Say so; a silent
+      # gap here reads as "nothing worth reading" and it is not the same thing.
+      printf '%s\tNO ENGLISH SUBTITLES\n' "$id"
+    fi
+  done
+}
+
+cmd_meta() {
+  [[ $# -gt 0 ]] || die "no video id given"
+  local id
+  for id in "$@"; do
+    id="${id##*/}"; id="${id#watch?v=}"
+    printf '%s\n' "$id"
+  done | xargs -P "$JOBS" -I{} yt-dlp --skip-download --print "$FMT" \
+      "https://youtu.be/{}" 2>/dev/null
+}
+
+case "${1:-}" in
+  search) shift; cmd_search "$@" ;;
+  subs)   shift; cmd_subs   "$@" ;;
+  meta)   shift; cmd_meta   "$@" ;;
+  -h|--help|"") sed -n '2,12p' "$0" ;;
+  *) die "unknown command '$1' (search | subs | meta)" ;;
+esac

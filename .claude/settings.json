@@ -1,0 +1,38 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git clone:*)",
+      "Bash(uv venv:*)",
+      "Bash(uv pip install:*)",
+      "Bash(uv tool install:*)",
+      "Bash(pip install:*)",
+      "Bash(pipx install:*)",
+      "Bash(agent-reach:*)",
+      "Bash(/root/.agent-reach-venv/bin/agent-reach:*)",
+      "Bash(yt-dlp:*)",
+      "Bash(mcporter:*)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/session-start.sh"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/session-upkeep.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
