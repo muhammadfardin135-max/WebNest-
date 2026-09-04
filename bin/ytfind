@@ -3,6 +3,7 @@
 #
 #   ytfind search [opts] QUERY...   candidate table: date, length, views, channel, title, url
 #   ytfind subs ID...               download auto-subtitles and clean them to plain text
+#   ytfind map [-b SEC] ID...       same transcript, kept in timestamped blocks
 #   ytfind meta ID...               one metadata line per video id
 #
 # Titles on this material are unreliable. The table is for narrowing only;
@@ -13,6 +14,7 @@ set -uo pipefail
 WORKDIR="${YTFIND_WORKDIR:-${TMPDIR:-/tmp}/ytfind}"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VTT2TXT="$HERE/vtt2txt.py"
+VTT2MAP="$HERE/vtt2map.py"
 JOBS="${YTFIND_JOBS:-16}"
 TAB=$'\t'
 FMT="%(id)s${TAB}%(upload_date)s${TAB}%(duration)s${TAB}%(view_count)s${TAB}%(channel)s${TAB}%(title)s"
@@ -31,7 +33,7 @@ cmd_search() {
       -M|--max)   max=$2;   shift 2 ;;
       -s|--since) since=$2; shift 2 ;;
       -L|--long)  longonly=1; shift ;;
-      -h|--help)  sed -n '2,12p' "$0"; exit 0 ;;
+      -h|--help)  sed -n '2,10p' "$0"; exit 0 ;;
       --) shift; break ;;
       -*) die "unknown option $1" ;;
       *)  break ;;
@@ -89,8 +91,9 @@ cmd_search() {
   rm -f "$ids"
 }
 
-cmd_subs() {
-  [[ $# -gt 0 ]] || die "no video id given"
+# Pull the .vtt for every id in parallel. Both `subs` and `map` start here;
+# they differ only in what they do with the file afterwards.
+fetch_vtt() {
   mkdir -p "$WORKDIR/subs"
   local id
   for id in "$@"; do
@@ -99,6 +102,12 @@ cmd_subs() {
         -o "$WORKDIR/subs/$id.%(ext)s" "https://youtu.be/$id" >/dev/null 2>&1 ) &
   done
   wait
+}
+
+cmd_subs() {
+  [[ $# -gt 0 ]] || die "no video id given"
+  fetch_vtt "$@"
+  local id
   for id in "$@"; do
     id="${id##*/}"; id="${id#watch?v=}"
     if [[ -f "$WORKDIR/subs/$id.en.vtt" ]]; then
@@ -108,6 +117,37 @@ cmd_subs() {
     else
       # No English track at all, or none auto-translated. Say so; a silent
       # gap here reads as "nothing worth reading" and it is not the same thing.
+      printf '%s\tNO ENGLISH SUBTITLES\n' "$id"
+    fi
+  done
+}
+
+# Deciding whether a two-hour video is worth two hours is a different question
+# from reading it, and it needs the timestamps `subs` throws away. 126 blocks
+# for a 2h06m video, measured — small enough to read whole, precise enough to
+# jump to the minute.
+cmd_map() {
+  local bucket=60
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+      -b|--bucket) bucket=$2; shift 2 ;;
+      --) shift; break ;;
+      -*) die "unknown option $1" ;;
+      *)  break ;;
+    esac
+  done
+  [[ $# -gt 0 ]] || die "no video id given"
+  fetch_vtt "$@"
+  local id
+  for id in "$@"; do
+    id="${id##*/}"; id="${id#watch?v=}"
+    if [[ -f "$WORKDIR/subs/$id.en.vtt" ]]; then
+      python3 "$VTT2MAP" -b "$bucket" "$WORKDIR/subs/$id.en.vtt" \
+        >"$WORKDIR/subs/$id.map.txt"
+      printf '%s\t%s blocks\t%s words\t%s\n' "$id" \
+        "$(wc -l <"$WORKDIR/subs/$id.map.txt")" \
+        "$(wc -w <"$WORKDIR/subs/$id.map.txt")" "$WORKDIR/subs/$id.map.txt"
+    else
       printf '%s\tNO ENGLISH SUBTITLES\n' "$id"
     fi
   done
@@ -126,7 +166,8 @@ cmd_meta() {
 case "${1:-}" in
   search) shift; cmd_search "$@" ;;
   subs)   shift; cmd_subs   "$@" ;;
+  map)    shift; cmd_map    "$@" ;;
   meta)   shift; cmd_meta   "$@" ;;
-  -h|--help|"") sed -n '2,12p' "$0" ;;
-  *) die "unknown command '$1' (search | subs | meta)" ;;
+  -h|--help|"") sed -n '2,10p' "$0" ;;
+  *) die "unknown command '$1' (search | subs | map | meta)" ;;
 esac

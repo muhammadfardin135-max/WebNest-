@@ -57,3 +57,47 @@ API from this container.
 - **Absence is a finding.** If the good video does not exist, say that, with
   the number of queries behind the claim. A silent gap reads as "I found the
   best there is" and that is a different, false statement.
+
+## Deciding whether to watch, rather than reading
+
+`subs` answers "what does this video say". It cannot answer "where in it", because
+`vtt2txt.py` drops every timestamp on purpose — that is what makes a rolling
+auto-caption file readable as prose.
+
+`map` keeps them.
+
+```
+ytfind map [-b SEC] ID...
+```
+
+Buckets the same de-duplicated transcript into timed blocks and writes
+`$WORKDIR/subs/ID.map.txt`. `-b` is seconds per block, default 60.
+
+```
+[0:14:00] and so the second thing he does is ...
+```
+
+The `video-triage` skill is the consumer: it reads the map and reports what is in
+the video with jumpable timestamps, instead of returning a verdict.
+
+### What was verified
+
+Measured 2026-09-04, this container, on `lnD01md5y0k` — a 2h06m interview.
+
+| Claim | Result |
+|---|---|
+| Auto-subs carry timestamps across a full 2-hour video | 6,185 cues, last at `02:05:58` |
+| `map` at the 60s default | 126 blocks, 22,233 words, **5.9s** end to end |
+| `map -b 300` | 26 blocks, same transcript |
+| Word count matches `subs` | 22,233 vs 22,107 — no content dropped by bucketing |
+| Missing English track | prints `NO ENGLISH SUBTITLES`, exit clean |
+| `subs` after the shared-download refactor | unchanged, 22,107 words |
+
+A 2-hour video therefore costs about six seconds and one read. **Untested:**
+videos with human-written (non-auto) captions, and any language but English.
+
+### Trap
+
+`map` is not a summary. It is the raw transcript with the clock left in, so the
+judgement happens where it can be checked. Reading only the block headers and
+guessing the rest defeats the point of pulling the file at all.
