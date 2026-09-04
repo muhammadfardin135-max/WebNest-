@@ -151,8 +151,13 @@ Business notes, not code. Don't assume a layout that isn't on disk — check.
 - `decisions/` — things I've already settled and why. Read before re-arguing a
   choice. If you want to reopen one, say which entry you're challenging.
 - `docs/` — how the tooling here works and what was actually tested.
-- `_bmad/` — config and scripts the vendored `bmad-*` skills call. Not notes.
-  Output goes to `_bmad-output/`. See `docs/vendored-skills.md`.
+
+**Seven skills, deliberately.** `business-critique`, `mom-test`, `interview-me`,
+`reverse-prompting`, `video-triage`, `playwright-cli`, `claude-md-improver`. 224
+vendored ones were deleted on 2026-09-04 — the reasoning and how to get any of
+them back is in `docs/vendored-skills.md`. Don't re-add a skill without asking me;
+a framework I don't use costs context every session and answers a question I
+didn't have.
 
 A browser works here: `playwright-cli`, restored each session by the session-start
 hook. `WebFetch` and `WebSearch` are cheaper for plain reading. See
