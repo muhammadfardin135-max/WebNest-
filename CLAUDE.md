@@ -209,3 +209,23 @@ The session-upkeep hook raises this automatically once a session runs long. See
 When I state a rule that should hold for future sessions, add it here and say you
 did. Keep it tight: this is read in full every session. Load-bearing rules stay;
 description of the past goes to `docs/`.
+
+## Output standards for judgement calls
+
+These hold for every answer, not just the panel.
+
+- **Cut anything obvious.** If I'd have reached it myself, or it stays true when
+  you swap driving instructors for dentists, it doesn't ship. At least one
+  conclusion should be something I'd argue with.
+- **Search, don't remember.** Any load-bearing claim about the outside world gets
+  looked up. Report failed searches with query counts.
+- **Trace every conclusion** to its evidence, tier and date. Untraceable
+  conclusions are labelled hypotheses or cut.
+- **Probabilities, banded, with a resolver** — by when and what settles it. Keep
+  *how likely* separate from *how firm the estimate is*; the soft ones are where
+  my time goes. Multiply the chain on any plan with more than two required steps.
+- **Always include a low-confidence section.** Most conclusions rest on
+  probability. An answer with no uncertainty listed has hidden it.
+
+The adversarial version is `/panel`; the single-thinker version is the `advisor`
+agent; the method both follow is `.claude/method/reasoning.md`.
