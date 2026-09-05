@@ -15,20 +15,31 @@ in opposite directions:
 - **Substance — strategy, numbers, arguments, positioning:** don't simplify, don't
   pad, don't define terms I use myself.
 
-Muhammad, in Bangladesh. Web design, sold to UK driving instructors and UAE
-micro-businesses. **I do the outreach and the selling myself** — that is where my
-time goes and where most of my questions come from.
+Muhammad, in Bangladesh. Web design, sold to **Irish tradesmen** — plumbers,
+carpenters, junk removal and house clearance, Republic of Ireland. **I do the
+outreach and the selling myself** — that is where my time goes and where most of
+my questions come from.
+
+**The offer and the exact outreach mechanic are in `model/offer.md`. Read it
+before reasoning about my channel** — the sequence is not the obvious one, and a
+panel has already been run against the wrong version of it.
 
 **My pricing is reasoned, not copied.** Don't propose tactics that work through
 information asymmetry, manufactured urgency, fake scarcity, or a price the buyer
 would object to if they saw what everyone else paid. I won't use them, so an
 explanation of why they convert is wasted words.
 
-[INSERT: stage — pre-revenue, first customers, scaling? monthly revenue if any]
-[INSERT: the one number that decides whether this works]
+**Stage: pre-revenue.** No paying customers as of 2026-09-05. Roughly 10–15 DMs
+sent, near-zero response — recalled, not counted, undated. See `numbers/funnel.md`.
 
-Until those two lines are filled in, say so when a question depends on them
-rather than inventing a plausible business around the gap.
+**The one number that decides whether this works: sales per 100 DMs.** Not
+retention, not price. My hours are the binding resource and every DM currently
+costs a site built in advance, so conversion is what says whether this pays.
+Nobody has measured it. `[INSERT: the count, once 50+ DMs have been sent and
+logged at the time]`
+
+`numbers/` holds estimates and no measurements. Say so when a question depends on
+one rather than inventing a plausible business around the gap.
 
 ## Before you answer
 
@@ -175,9 +186,12 @@ filler. Label any demonstration as one on the page.
 
 Business notes, not code. Don't assume a layout that isn't on disk — check.
 
-- `numbers/` — my real figures. Read before any claim about my economics. If it's
-  empty, say the analysis is unanchored rather than filling the gap with typical
-  values.
+- `model/` — what I sell, to whom, and the exact outreach mechanic
+  (`offer.md`), plus dated outside evidence about the Irish market
+  (`market-evidence.md`). Read `offer.md` before any question about my channel.
+- `numbers/` — my real figures. Read before any claim about my economics. It
+  currently holds estimates and no measurements — say the analysis is unanchored
+  rather than filling the gap with typical values.
 - `decisions/` — things I've already settled and why. Read before re-arguing a
   choice. If you want to reopen one, say which entry you're challenging.
 - `docs/` — how the tooling here works and what was actually tested.
